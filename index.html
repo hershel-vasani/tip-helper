@@ -171,14 +171,33 @@
       const tipKeywords = ['gratuity','grat','service charge','svc chg','srv chg','tip included','tip added','auto tip','auto grat','suggested tip','mandatory tip'];
       const tipIncluded = tipKeywords.some(kw => lower.includes(kw));
       let subtotal = null;
-      const subtotalPatterns = [/sub[\s-]?total[\s:$]*(\d+[\.,]\d{2})/i,/food[\s:$]*(\d+[\.,]\d{2})/i,/meal[\s:$]*(\d+[\.,]\d{2})/i,/amount[\s:$]*(\d+[\.,]\d{2})/i,/net[\s:$]*(\d+[\.,]\d{2})/i];
-      for (const pat of subtotalPatterns) { const m = lower.match(pat); if (m) { subtotal = parseFloat(m[1].replace(',','.')); break; } }
-      if (!subtotal) { for (const line of lines) { const lo = line.toLowerCase(); if (/total|amount due|balance due/.test(lo)) { const m = line.match(/(\d+[.,]\d{2})/); if (m) { subtotal = parseFloat(m[1].replace(',','.')); break; } } } }
-      if (!subtotal) {
-        const amounts = []; const amtPattern = /\$?\s*(\d{1,4}[.,]\d{2})/g; let match;
-        while ((match = amtPattern.exec(text)) !== null) { const val = parseFloat(match[1].replace(',','.')); if (val >= 1 && val < 10000) amounts.push(val); }
-        if (amounts.length > 0) { amounts.sort((a,b) => b-a); subtotal = amounts.find(a => a < 500) || amounts[0]; }
+
+      // Priority 1: line containing "total" but not "subtotal"
+      for (const line of lines) {
+        const lo = line.toLowerCase();
+        if (/\btotal\b/.test(lo) && !/sub/.test(lo)) {
+          const m = line.match(/\$?\s*(\d+[\.,]\d{2})/);
+          if (m) { subtotal = parseFloat(m[1].replace(',','.')); break; }
+        }
       }
+
+      // Priority 2: subtotal line
+      if (!subtotal) {
+        for (const line of lines) {
+          if (/sub[\s-]?total/i.test(line)) {
+            const m = line.match(/\$?\s*(\d+[\.,]\d{2})/);
+            if (m) { subtotal = parseFloat(m[1].replace(',','.')); break; }
+          }
+        }
+      }
+
+      // Priority 3: largest dollar amount under $500
+      if (!subtotal) {
+        const amounts = []; const amtPattern = /\$?\s*(\d{1,4}[\.,]\d{2})/g; let match;
+        while ((match = amtPattern.exec(text)) !== null) { const val = parseFloat(match[1].replace(',','.')); if (val >= 1 && val < 500) amounts.push(val); }
+        if (amounts.length > 0) { amounts.sort((a,b) => b-a); subtotal = amounts[0]; }
+      }
+
       if (tipIncluded) showStatus('status-included', '✅ Tip Already Included!\nGratuity has been added to this bill.');
       else showStatus('status-not-included', '❌ Tip Not Included\nPlease choose a tip below.');
       if (subtotal && subtotal > 0) {
