@@ -7,3 +7,601 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Tip Helper" />
   <title>Tip Helper</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #1a1a2e;
+      color: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 16px 40px;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      text-align: center;
+      margin: 16px 0 6px;
+    }
+
+    .subtitle {
+      font-size: 1.1rem;
+      color: #a0a0c0;
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .screen {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    /* Scan area */
+    .scan-area {
+      width: 100%;
+      background: #252545;
+      border-radius: 20px;
+      padding: 28px 24px;
+      text-align: center;
+      border: 2px dashed #444466;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .scan-area:active { border-color: #7eb8f7; }
+    .scan-icon { font-size: 4rem; margin-bottom: 12px; display: block; }
+    .scan-area h2 { font-size: 1.6rem; margin-bottom: 8px; }
+    .scan-area p  { color: #a0a0c0; font-size: 1.05rem; }
+    #file-input   { display: none; }
+
+    /* Preview */
+    #preview-container { width: 100%; display: none; }
+    #preview-img {
+      width: 100%;
+      border-radius: 16px;
+      max-height: 300px;
+      object-fit: contain;
+      background: #252545;
+    }
+
+    /* Buttons */
+    .btn-primary {
+      width: 100%;
+      padding: 20px;
+      font-size: 1.3rem;
+      font-weight: 800;
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+      background: linear-gradient(135deg, #4f7ef8, #7b5ea7);
+      color: white;
+      display: none;
+      transition: opacity 0.2s;
+    }
+    .btn-primary:active  { opacity: 0.8; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Progress bar */
+    #progress-wrap {
+      width: 100%;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+    }
+    #progress-label {
+      font-size: 1.1rem;
+      color: #a0c0ff;
+      text-align: center;
+    }
+    #progress-bar-bg {
+      width: 100%;
+      height: 14px;
+      background: #333355;
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    #progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #4f7ef8, #7b5ea7);
+      border-radius: 99px;
+      transition: width 0.3s ease;
+    }
+
+    /* Status box */
+    #status-box {
+      width: 100%;
+      padding: 20px;
+      border-radius: 16px;
+      font-size: 1.3rem;
+      font-weight: 700;
+      text-align: center;
+      line-height: 1.5;
+      display: none;
+    }
+    .status-included     { background: #1a4a2a; border: 2px solid #2ecc71; color: #2ecc71; }
+    .status-not-included { background: #4a1a1a; border: 2px solid #e74c3c; color: #f0a0a0; }
+    .status-warning      { background: #3a2a10; border: 2px solid #f39c12; color: #f9c74f; }
+
+    /* Bill display */
+    #bill-display {
+      width: 100%;
+      background: #252545;
+      border-radius: 16px;
+      padding: 18px 20px;
+      text-align: center;
+      display: none;
+    }
+    #bill-display .label  { font-size: 1rem; color: #a0a0c0; margin-bottom: 6px; }
+    #bill-display .amount { font-size: 2.4rem; font-weight: 800; }
+
+    /* Manual override */
+    #manual-section {
+      width: 100%;
+      display: none;
+    }
+    #manual-section p {
+      font-size: 1rem;
+      color: #a0a0c0;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    .manual-row {
+      display: flex;
+      gap: 10px;
+    }
+    input[type="number"] {
+      flex: 1;
+      padding: 16px;
+      font-size: 1.3rem;
+      border-radius: 12px;
+      border: 2px solid #444466;
+      background: #1a1a2e;
+      color: #fff;
+      outline: none;
+    }
+    input[type="number"]:focus { border-color: #7eb8f7; }
+    .btn-ok {
+      padding: 16px 22px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 12px;
+      background: #4f7ef8;
+      color: white;
+      cursor: pointer;
+    }
+    .btn-ok:active { opacity: 0.8; }
+
+    /* Tip section */
+    #tip-section { width: 100%; display: none; }
+    #tip-section h2 {
+      font-size: 1.4rem;
+      text-align: center;
+      margin-bottom: 14px;
+      color: #c0c0e0;
+    }
+    .tip-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+    }
+    .tip-btn {
+      background: #252545;
+      border: 3px solid transparent;
+      border-radius: 18px;
+      padding: 18px 10px;
+      cursor: pointer;
+      text-align: center;
+      color: white;
+      transition: background 0.15s;
+    }
+    .tip-btn.good  { border-color: #3498db; }
+    .tip-btn.great { border-color: #2ecc71; }
+    .tip-btn.excel { border-color: #f39c12; }
+    .tip-btn.good:active  { background: #1a2a4a; }
+    .tip-btn.great:active { background: #1a3a2a; }
+    .tip-btn.excel:active { background: #3a2a10; }
+    .tip-btn .emoji    { font-size: 2rem; display: block; margin-bottom: 6px; }
+    .tip-btn .tlabel   { font-size: 1.1rem; font-weight: 700; display: block; }
+    .tip-btn .pct      { font-size: 0.95rem; color: #a0a0c0; display: block; margin-top: 2px; }
+    .tip-btn .tip-amt  { font-size: 1.5rem; font-weight: 800; display: block; margin-top: 8px; }
+    .tip-btn .total-amt{ font-size: 0.9rem; color: #a0a0c0; display: block; margin-top: 3px; }
+
+    /* Result card */
+    #result-card {
+      width: 100%;
+      background: #252545;
+      border-radius: 20px;
+      padding: 24px;
+      text-align: center;
+      display: none;
+      border: 3px solid #f39c12;
+    }
+    .chosen-label { font-size: 1rem; color: #a0a0c0; margin-bottom: 6px; }
+    .chosen-tier  { font-size: 2rem; font-weight: 800; margin-bottom: 14px; }
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 1.3rem;
+      padding: 8px 0;
+      border-bottom: 1px solid #333355;
+    }
+    .result-row:last-child { border-bottom: none; }
+    .result-row .val { font-weight: 700; }
+    .result-total {
+      display: flex;
+      justify-content: space-between;
+      font-size: 1.7rem;
+      font-weight: 800;
+      padding-top: 14px;
+      color: #f39c12;
+    }
+
+    /* Reset */
+    #reset-btn {
+      width: 100%;
+      padding: 16px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      border: 2px solid #444466;
+      border-radius: 14px;
+      cursor: pointer;
+      background: transparent;
+      color: #a0a0c0;
+      display: none;
+    }
+    #reset-btn:active { border-color: #7eb8f7; color: #7eb8f7; }
+
+    /* OCR raw text (debug) */
+    #ocr-debug {
+      width: 100%;
+      background: #181830;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 0.8rem;
+      color: #666688;
+      font-family: monospace;
+      white-space: pre-wrap;
+      word-break: break-word;
+      display: none;
+      max-height: 180px;
+      overflow-y: auto;
+    }
+    #debug-toggle {
+      font-size: 0.85rem;
+      color: #555577;
+      text-align: center;
+      cursor: pointer;
+      text-decoration: underline;
+      display: none;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🧾 Tip Helper</h1>
+  <p class="subtitle">Simple tips for any bill</p>
+
+  <div class="screen">
+
+    <!-- Scan area -->
+    <div class="scan-area" onclick="document.getElementById('file-input').click()">
+      <span class="scan-icon">📷</span>
+      <h2>Take a Photo of Your Bill</h2>
+      <p>Tap here to use your camera or choose a photo</p>
+      <input type="file" id="file-input" accept="image/*" capture="environment" onchange="previewPhoto(event)" />
+    </div>
+
+    <!-- Preview -->
+    <div id="preview-container">
+      <img id="preview-img" src="" alt="Bill preview" />
+    </div>
+
+    <!-- Read button -->
+    <button class="btn-primary" id="analyze-btn" onclick="analyzeBill()">🔍 Read My Bill</button>
+
+    <!-- Progress -->
+    <div id="progress-wrap">
+      <div id="progress-label">Starting up…</div>
+      <div id="progress-bar-bg">
+        <div id="progress-bar-fill"></div>
+      </div>
+    </div>
+
+    <!-- Tip included / not status -->
+    <div id="status-box"></div>
+
+    <!-- Bill amount -->
+    <div id="bill-display">
+      <div class="label">Bill Amount</div>
+      <div class="amount" id="bill-amount-text">—</div>
+    </div>
+
+    <!-- Manual entry fallback -->
+    <div id="manual-section">
+      <p>The camera couldn't read the total clearly.<br>Please type it in:</p>
+      <div class="manual-row">
+        <input type="number" id="manual-amount" placeholder="e.g. 42.50" step="0.01" min="0" />
+        <button class="btn-ok" onclick="applyManual()">OK</button>
+      </div>
+    </div>
+
+    <!-- Tip buttons -->
+    <div id="tip-section">
+      <h2>Choose your tip:</h2>
+      <div class="tip-grid">
+        <div class="tip-btn good"  onclick="selectTip('Good', 0.18)">
+          <span class="emoji">👍</span>
+          <span class="tlabel">Good</span>
+          <span class="pct">18%</span>
+          <span class="tip-amt" id="tip-good">—</span>
+          <span class="total-amt" id="total-good"></span>
+        </div>
+        <div class="tip-btn great" onclick="selectTip('Great', 0.20)">
+          <span class="emoji">😊</span>
+          <span class="tlabel">Great</span>
+          <span class="pct">20%</span>
+          <span class="tip-amt" id="tip-great">—</span>
+          <span class="total-amt" id="total-great"></span>
+        </div>
+        <div class="tip-btn excel" onclick="selectTip('Excellent', 0.25)">
+          <span class="emoji">⭐</span>
+          <span class="tlabel">Excellent</span>
+          <span class="pct">25%</span>
+          <span class="tip-amt" id="tip-excel">—</span>
+          <span class="total-amt" id="total-excel"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Result card -->
+    <div id="result-card">
+      <div class="chosen-label">You chose</div>
+      <div class="chosen-tier" id="chosen-tier-text"></div>
+      <div class="result-row"><span>Bill</span><span class="val" id="res-bill"></span></div>
+      <div class="result-row"><span>Tip</span><span class="val" id="res-tip"></span></div>
+      <div class="result-total"><span>Total</span><span id="res-total"></span></div>
+    </div>
+
+    <!-- Start over -->
+    <button id="reset-btn" onclick="resetApp()">↩ Scan Another Bill</button>
+
+    <!-- Debug -->
+    <div id="debug-toggle" onclick="toggleDebug()">🔬 Show what the camera read</div>
+    <div id="ocr-debug"></div>
+
+  </div><!-- end .screen -->
+
+  <!-- Tesseract.js from CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
+  <script>
+    let billAmount = null;
+
+    // ── Photo preview ──────────────────────────────────────────────
+    function previewPhoto(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const url = URL.createObjectURL(file);
+      document.getElementById('preview-img').src = url;
+      document.getElementById('preview-container').style.display = 'block';
+      document.getElementById('analyze-btn').style.display = 'block';
+      hideResults();
+    }
+
+    // ── Run OCR ────────────────────────────────────────────────────
+    async function analyzeBill() {
+      const imgEl = document.getElementById('preview-img');
+      if (!imgEl.src) return;
+
+      // Show progress, hide button
+      document.getElementById('analyze-btn').style.display = 'none';
+      document.getElementById('progress-wrap').style.display = 'flex';
+      setProgress(0, 'Loading text reader…');
+      hideResults();
+
+      try {
+        const result = await Tesseract.recognize(imgEl, 'eng', {
+          logger: m => {
+            if (m.status === 'recognizing text') {
+              const pct = Math.round(m.progress * 100);
+              setProgress(pct, `Reading bill… ${pct}%`);
+            } else if (m.status === 'loading tesseract core') {
+              setProgress(5, 'Loading text reader…');
+            } else if (m.status === 'initializing tesseract') {
+              setProgress(10, 'Getting ready…');
+            } else if (m.status === 'loading language traineddata') {
+              setProgress(20, 'Loading language data…');
+            } else if (m.status === 'initializing api') {
+              setProgress(30, 'Starting up…');
+            }
+          }
+        });
+
+        setProgress(100, 'Done!');
+        document.getElementById('progress-wrap').style.display = 'none';
+
+        const rawText = result.data.text;
+
+        // Show debug text
+        document.getElementById('ocr-debug').textContent = rawText;
+        document.getElementById('debug-toggle').style.display = 'block';
+
+        parseReceipt(rawText);
+
+      } catch (err) {
+        document.getElementById('progress-wrap').style.display = 'none';
+        document.getElementById('analyze-btn').style.display = 'block';
+        showStatus('status-warning', `⚠️ Couldn't read the photo. Try better lighting or a clearer photo.`);
+      }
+    }
+
+    function setProgress(pct, label) {
+      document.getElementById('progress-bar-fill').style.width = pct + '%';
+      document.getElementById('progress-label').textContent = label;
+    }
+
+    // ── Parse OCR text ─────────────────────────────────────────────
+    function parseReceipt(text) {
+      const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+      const lower = text.toLowerCase();
+
+      // ── 1. Detect if tip is already included ──
+      const tipKeywords = [
+        'gratuity', 'grat', 'service charge', 'svc chg', 'srv chg',
+        'tip included', 'tip added', 'auto tip', 'auto grat',
+        'suggested tip', 'mandatory tip'
+      ];
+      const tipIncluded = tipKeywords.some(kw => lower.includes(kw));
+
+      // ── 2. Find the bill subtotal ──
+      // Strategy: look for labelled lines first, then fall back to largest amount
+      let subtotal = null;
+
+      // Patterns for labelled subtotal lines
+      const subtotalPatterns = [
+        /sub[\s-]?total[\s:$]*(\d+[\.,]\d{2})/i,
+        /food[\s:$]*(\d+[\.,]\d{2})/i,
+        /meal[\s:$]*(\d+[\.,]\d{2})/i,
+        /amount[\s:$]*(\d+[\.,]\d{2})/i,
+        /net[\s:$]*(\d+[\.,]\d{2})/i,
+      ];
+
+      for (const pat of subtotalPatterns) {
+        const m = lower.match(pat);
+        if (m) { subtotal = parseFloat(m[1].replace(',', '.')); break; }
+      }
+
+      // If no labelled subtotal, look for a "total" line (but not the very last, which may include tax)
+      if (!subtotal) {
+        for (const line of lines) {
+          const lo = line.toLowerCase();
+          if (/total|amount due|balance due/.test(lo)) {
+            const m = line.match(/(\d+[.,]\d{2})/);
+            if (m) { subtotal = parseFloat(m[1].replace(',', '.')); break; }
+          }
+        }
+      }
+
+      // Last resort: find all dollar amounts and pick the largest reasonable one
+      if (!subtotal) {
+        const amounts = [];
+        const amtPattern = /\$?\s*(\d{1,4}[.,]\d{2})/g;
+        let match;
+        while ((match = amtPattern.exec(text)) !== null) {
+          const val = parseFloat(match[1].replace(',', '.'));
+          if (val >= 1 && val < 10000) amounts.push(val);
+        }
+        if (amounts.length > 0) {
+          // Prefer the largest amount that's < $500 (avoid huge numbers from bad OCR)
+          amounts.sort((a, b) => b - a);
+          subtotal = amounts.find(a => a < 500) || amounts[0];
+        }
+      }
+
+      // ── 3. Show results ──
+      if (tipIncluded) {
+        showStatus('status-included', '✅ Tip Already Included!\nGratuity has been added to this bill.');
+      } else {
+        showStatus('status-not-included', '❌ Tip Not Included\nPlease choose a tip below.');
+      }
+
+      if (subtotal && subtotal > 0) {
+        billAmount = subtotal;
+        document.getElementById('bill-amount-text').textContent = fmt(billAmount);
+        document.getElementById('bill-display').style.display = 'block';
+        populateTipButtons(billAmount);
+        document.getElementById('tip-section').style.display = 'block';
+      } else {
+        // Couldn't find amount — show manual entry
+        document.getElementById('manual-section').style.display = 'block';
+      }
+
+      document.getElementById('reset-btn').style.display = 'block';
+    }
+
+    // ── Manual amount entry ────────────────────────────────────────
+    function applyManual() {
+      const val = parseFloat(document.getElementById('manual-amount').value);
+      if (!val || val <= 0) { alert('Please enter a valid amount'); return; }
+      billAmount = val;
+      document.getElementById('bill-amount-text').textContent = fmt(billAmount);
+      document.getElementById('bill-display').style.display = 'block';
+      document.getElementById('manual-section').style.display = 'none';
+      populateTipButtons(billAmount);
+      document.getElementById('tip-section').style.display = 'block';
+    }
+
+    // ── Tip buttons ────────────────────────────────────────────────
+    function populateTipButtons(bill) {
+      document.getElementById('tip-good').textContent  = fmt(bill * 0.18);
+      document.getElementById('tip-great').textContent = fmt(bill * 0.20);
+      document.getElementById('tip-excel').textContent = fmt(bill * 0.25);
+      document.getElementById('total-good').textContent  = 'Total ' + fmt(bill * 1.18);
+      document.getElementById('total-great').textContent = 'Total ' + fmt(bill * 1.20);
+      document.getElementById('total-excel').textContent = 'Total ' + fmt(bill * 1.25);
+    }
+
+    function selectTip(tier, pct) {
+      if (!billAmount) return;
+      const tipAmt   = billAmount * pct;
+      const totalAmt = billAmount + tipAmt;
+      const emojis   = { Good: '👍', Great: '😊', Excellent: '⭐' };
+
+      document.getElementById('chosen-tier-text').textContent = `${emojis[tier]} ${tier}`;
+      document.getElementById('res-bill').textContent  = fmt(billAmount);
+      document.getElementById('res-tip').textContent   = fmt(tipAmt);
+      document.getElementById('res-total').textContent = fmt(totalAmt);
+      document.getElementById('result-card').style.display = 'block';
+      document.getElementById('result-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // ── Reset ──────────────────────────────────────────────────────
+    function resetApp() {
+      billAmount = null;
+      document.getElementById('preview-container').style.display = 'none';
+      document.getElementById('preview-img').src = '';
+      document.getElementById('file-input').value = '';
+      document.getElementById('manual-amount').value = '';
+      hideResults();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function hideResults() {
+      ['status-box','bill-display','tip-section','result-card',
+       'reset-btn','manual-section','debug-toggle','ocr-debug',
+       'progress-wrap'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+      });
+      document.getElementById('analyze-btn').style.display = 'none';
+    }
+
+    // ── Debug toggle ───────────────────────────────────────────────
+    function toggleDebug() {
+      const box = document.getElementById('ocr-debug');
+      box.style.display = box.style.display === 'none' ? 'block' : 'none';
+    }
+
+    // ── Helpers ────────────────────────────────────────────────────
+    function showStatus(cls, msg) {
+      const box = document.getElementById('status-box');
+      box.className = cls;
+      box.style.whiteSpace = 'pre-line';
+      box.textContent = msg;
+      box.style.display = 'block';
+    }
+
+    function fmt(n) { return '$' + n.toFixed(2); }
+  </script>
+</body>
+</html>
