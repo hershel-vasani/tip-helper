@@ -5,9 +5,14 @@ import os
 
 PROMPT = (
     'This is a photo of a restaurant or food service receipt. '
-    'Reply with ONLY valid JSON, no other text. '
-    'Find the final amount the customer owes (labeled Total, Amount Due, Balance Due, Grand Total, etc.). '
-    'Also check if gratuity/tip/service charge is already included. '
+    'Reply with ONLY valid JSON, no other text.\n'
+    '1) Find the final amount the customer owes (labeled Total, Amount Due, Balance Due, Grand Total, etc.).\n'
+    '2) Determine whether a tip/gratuity/service charge has ALREADY been added to that total. '
+    'This is common for large parties. Look for any line such as: Gratuity, Auto Gratuity, Auto Grat, '
+    'Service Charge, Svc Chg, Srv Chg, Tip, Tip Included, "18% added", "20% gratuity", or a mandatory/suggested '
+    'service fee that is part of the total. Set tip_included to true ONLY if such a charge is actually included '
+    'in the total (ignore blank tip lines the customer is meant to fill in themselves).\n'
+    '3) If tip_included is true, put the exact wording/percent you saw in tip_label (e.g. "Gratuity 18%").\n'
     'JSON format: {"total": <number or null>, "tip_included": <true or false>, "tip_label": "<label found or null>"}'
 )
 
