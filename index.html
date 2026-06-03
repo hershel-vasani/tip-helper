@@ -133,12 +133,14 @@
       hideResults(true);
 
       try {
-        // Convert image to base64
-        const b64 = await toBase64(imgEl.src);
+        // Downscale + re-encode to JPEG before sending. This keeps the upload
+        // small (under Vercel's request limit), cuts cost, and normalizes
+        // iPhone HEIC photos into a format the API reliably accepts.
+        const b64 = compressImage(imgEl);
 
         // Forward the passcode from this page's URL (?key=...) if present
         const key = new URLSearchParams(window.location.search).get('key');
-        const endpoint = key ? '/analyze?key=' + encodeURIComponent(key) : '/analyze';
+        const endpoint = key ? '/api/analyze?key=' + encodeURIComponent(key) : '/api/analyze';
         const res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -183,17 +185,17 @@
       document.getElementById('reset-btn').style.display = 'block';
     }
 
-    async function toBase64(src) {
-      // If already a data URL, return as-is
-      if (src.startsWith('data:')) return src;
-      const res = await fetch(src);
-      const blob = await res.blob();
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
+    function compressImage(imgEl, maxDim = 1600, quality = 0.8) {
+      let w = imgEl.naturalWidth, h = imgEl.naturalHeight;
+      if (Math.max(w, h) > maxDim) {
+        const scale = maxDim / Math.max(w, h);
+        w = Math.round(w * scale);
+        h = Math.round(h * scale);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(imgEl, 0, 0, w, h);
+      return canvas.toDataURL('image/jpeg', quality);
     }
 
     function applyManual() {

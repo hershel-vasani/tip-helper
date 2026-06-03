@@ -21,7 +21,7 @@ def index():
 def too_large(e):
     return jsonify({'error': 'Image too large. Please use a smaller photo.'}), 413
 
-@app.route('/analyze', methods=['POST'])
+@app.route('/api/analyze', methods=['POST'])
 def analyze():
     import anthropic
 
