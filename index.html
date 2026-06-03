@@ -136,7 +136,10 @@
         // Convert image to base64
         const b64 = await toBase64(imgEl.src);
 
-        const res = await fetch('/analyze', {
+        // Forward the passcode from this page's URL (?key=...) if present
+        const key = new URLSearchParams(window.location.search).get('key');
+        const endpoint = key ? '/analyze?key=' + encodeURIComponent(key) : '/analyze';
+        const res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ image: b64 })

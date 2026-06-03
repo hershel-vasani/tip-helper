@@ -3,15 +3,33 @@ import base64
 import json
 from flask import Flask, request, jsonify
 
+# Max request body size: 8 MB (a generous ceiling for a phone photo).
+MAX_IMAGE_BYTES = 8 * 1024 * 1024
+
 app = Flask(__name__, static_folder='.', static_url_path='')
+app.config['MAX_CONTENT_LENGTH'] = MAX_IMAGE_BYTES
+
+# Optional shared passcode. If APP_PASSCODE is set in the environment, every
+# /analyze request must include a matching ?key= (or X-App-Key header).
+APP_PASSCODE = os.environ.get('APP_PASSCODE')
 
 @app.route('/')
 def index():
     return app.send_static_file('index.html')
 
+@app.errorhandler(413)
+def too_large(e):
+    return jsonify({'error': 'Image too large. Please use a smaller photo.'}), 413
+
 @app.route('/analyze', methods=['POST'])
 def analyze():
     import anthropic
+
+    # Passcode gate (only enforced if APP_PASSCODE is configured)
+    if APP_PASSCODE:
+        provided = request.args.get('key') or request.headers.get('X-App-Key')
+        if provided != APP_PASSCODE:
+            return jsonify({'error': 'Not authorized'}), 401
 
     api_key = os.environ.get('ANTHROPIC_API_KEY')
     if not api_key:
