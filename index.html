@@ -236,17 +236,20 @@
     }
 
     function populateTipButtons(bill) {
-      document.getElementById('tip-good').textContent = fmt(bill * 0.18);
-      document.getElementById('tip-great').textContent = fmt(bill * 0.20);
-      document.getElementById('tip-excel').textContent = fmt(bill * 0.25);
-      document.getElementById('total-good').textContent = fmt(bill * 1.18);
-      document.getElementById('total-great').textContent = fmt(bill * 1.20);
-      document.getElementById('total-excel').textContent = fmt(bill * 1.25);
+      const good = roundUpTip(bill * 0.18);
+      const great = roundUpTip(bill * 0.20);
+      const excel = roundUpTip(bill * 0.25);
+      document.getElementById('tip-good').textContent = fmt(good);
+      document.getElementById('tip-great').textContent = fmt(great);
+      document.getElementById('tip-excel').textContent = fmt(excel);
+      document.getElementById('total-good').textContent = fmt(bill + good);
+      document.getElementById('total-great').textContent = fmt(bill + great);
+      document.getElementById('total-excel').textContent = fmt(bill + excel);
     }
 
     function selectTip(tier, pct) {
       if (!billAmount) return;
-      const tipAmt = billAmount * pct;
+      const tipAmt = roundUpTip(billAmount * pct);
       const totalAmt = billAmount + tipAmt;
       const emojis = { Good: '👍', Great: '😊', Excellent: '⭐' };
       document.getElementById('chosen-tier-text').textContent = emojis[tier] + ' ' + tier;
@@ -281,6 +284,7 @@
     }
 
     function fmt(n) { return '$' + n.toFixed(2); }
+    function roundUpTip(n) { return Math.ceil(n * 10) / 10; }
   </script>
 </body>
 </html>
